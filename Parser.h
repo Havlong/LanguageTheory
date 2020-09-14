@@ -23,8 +23,8 @@ private:
     inline static const int VAR_DECLARATION = 327557;
     inline static const int OPERATOR_DECLARATION = 327558;
     inline static const int VAR_LIST = 327559;
-    inline static const int ASSIGNMENT_LIST = 327560;
-    inline static const int ASSIGNMENT = 327561;
+    inline static const int OPERATOR_LIST = 327560;
+    inline static const int OPERATOR = 327561;
     inline static const int EXPRESSION = 327562;
     inline static const int SUBEXPRESSION = 327563;
     inline static const int UNARY_OPERATOR = 327564;
