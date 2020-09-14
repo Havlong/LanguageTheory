@@ -65,35 +65,25 @@ void Parser::initializeGrammar() {
 void Parser::initializeFirstFunctionSets() {
     for (const auto&[nonTerminal, rule]: rules) {
         if (first[nonTerminal].empty()) {
-            std::set<char> beginning;
-            initializeFirstForNonTerminal(nonTerminal, beginning);
+            initializeFirstForNonTerminal(nonTerminal);
         }
     }
 }
 
-void Parser::initializeFirstForNonTerminal(int code, std::set<char> &parentTerminals) {
-    if (first[code].empty()) {
-        std::set<char> terminals;
-        for (const auto &rule : rules[code]) {
+void Parser::initializeFirstForNonTerminal(int nonTerminal) {
+    if (first[nonTerminal].empty()) {
+        for (const auto &rule : rules[nonTerminal]) {
             if (rule.front() >= PROGRAM) {
-                if (first[rule.front()].empty()) {
-                    if (rule.front() != code) {
-                        initializeFirstForNonTerminal(rule.front(), terminals);
-                    }
-                } else {
-                    for (const auto &terminal : first[rule.front()]) {
-                        terminals.insert(terminal);
-                    }
+                if (rule.front() != nonTerminal) {
+                    initializeFirstForNonTerminal(rule.front());
                 }
-
+                for (const auto &terminal : first[rule.front()]) {
+                    first[nonTerminal].insert(terminal);
+                }
             } else {
-                terminals.insert(rule.front());
+                first[nonTerminal].insert(rule.front());
             }
         }
-        first[code] = terminals;
-    }
-    for (const auto &terminal : first[code]) {
-        parentTerminals.insert(terminal);
     }
 }
 

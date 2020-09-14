@@ -43,7 +43,7 @@ private:
 
     void initializeFirstFunctionSets();
 
-    void initializeFirstForNonTerminal(int code, std::set<char> &terminals);
+    void initializeFirstForNonTerminal(int nonTerminal);
 
     void initializeNextFunctionMapper();
 
