@@ -17,37 +17,41 @@
 
 class Parser {
 private:
-    static const int LETTER = 327555;
-    static const int DIGIT = 327555;
-    static const int PROGRAM = 327556;
-    static const int VAR_DECLARATION = 327557;
-    static const int OPERATOR_DECLARATION = 327558;
-    static const int VAR_LIST = 327559;
-    static const int ASSIGNMENT_LIST = 327560;
-    static const int ASSIGNMENT = 327561;
-    static const int EXPRESSION = 327562;
-    static const int SUBEXPRESSION = 327563;
-    static const int UNARY_OPERATOR = 327564;
-    static const int BINARY_OPERATOR = 327565;
-    static const int OPERAND = 327566;
-    static const int CONST = 327567;
-    static const int VAR = 327568;
+    inline static const int PROGRAM = 327554;
+    inline static const int LETTER = 327555;
+    inline static const int DIGIT = 327556;
+    inline static const int VAR_DECLARATION = 327557;
+    inline static const int OPERATOR_DECLARATION = 327558;
+    inline static const int VAR_LIST = 327559;
+    inline static const int ASSIGNMENT_LIST = 327560;
+    inline static const int ASSIGNMENT = 327561;
+    inline static const int EXPRESSION = 327562;
+    inline static const int SUBEXPRESSION = 327563;
+    inline static const int UNARY_OPERATOR = 327564;
+    inline static const int BINARY_OPERATOR = 327565;
+    inline static const int OPERAND = 327566;
+    inline static const int CONST = 327567;
+    inline static const int VAR = 327568;
 
     std::stack<int> stack;
 
     std::map<int, std::vector<std::vector<int>>> rules;
-    std::map<char, std::set<char>> first;
-    std::map<char, std::map<char, int>> next;
-
-    static std::vector<char> mapper;
+    std::map<int, std::set<char>> first;
+    std::map<int, std::map<char, int>> next;
 
     void initializeGrammar();
 
+    void initializeFirstFunctionSets();
+
+    void initializeFirstForNonTerminal(int code, std::set<char> &terminals);
+
+    void initializeNextFunctionMapper();
+
 public:
 
-    std::vector<int> parseLine(std::string line);
+    std::vector<int> parseLine(const std::string &line);
 
-    std::vector<int> parseProgram(std::string program);
+    std::vector<int> parseProgram(const std::string &program);
 
 
     Parser();

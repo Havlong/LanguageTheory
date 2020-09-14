@@ -10,15 +10,21 @@
 
 Parser::Parser() {
     initializeGrammar();
+    initializeFirstFunctionSets();
+    initializeNextFunctionMapper();
 }
 
-std::vector<int> Parser::parseLine(std::string line) {
+std::vector<int> Parser::parseLine(const std::string &line) {
     // TODO: Implement syntax parser
     return std::vector<int>();
 }
 
+std::vector<int> Parser::parseProgram(const std::string &program) {
+    // TODO: Implement line splitter and parseLine() usage
+    return std::vector<int>();
+}
+
 void Parser::initializeGrammar() {
-    // TODO: Initialize rules and sets for NEXT function
     rules[PROGRAM].push_back({VAR_DECLARATION, OPERATOR_DECLARATION});
     rules[OPERATOR_DECLARATION].push_back({'B', 'E', 'G', 'I', 'N', ASSIGNMENT_LIST, 'E', 'N', 'D'});
     rules[VAR_DECLARATION].push_back({'V', 'A', 'R', VAR_LIST, ':', 'I', 'N', 'T', 'E', 'G', 'E', 'R', ';'});
@@ -38,7 +44,7 @@ void Parser::initializeGrammar() {
     rules[BINARY_OPERATOR].push_back({'*'});
     rules[OPERAND].push_back({VAR});
     rules[OPERAND].push_back({CONST});
-    for (int i = 11; i > 0; ++i) {
+    for (int i = 11; i > 0; --i) {
         rules[VAR + i].push_back({LETTER, VAR + i - 1});
         rules[VAR + i].push_back({LETTER});
     }
@@ -56,7 +62,41 @@ void Parser::initializeGrammar() {
     }
 }
 
-std::vector<int> Parser::parseProgram(std::string program) {
-    // TODO: Implement line splitter and parseLine() usage
-    return std::vector<int>();
+void Parser::initializeFirstFunctionSets() {
+    for (const auto&[nonTerminal, rule]: rules) {
+        if (first[nonTerminal].empty()) {
+            std::set<char> beginning;
+            initializeFirstForNonTerminal(nonTerminal, beginning);
+        }
+    }
+}
+
+void Parser::initializeFirstForNonTerminal(int code, std::set<char> &parentTerminals) {
+    if (first[code].empty()) {
+        std::set<char> terminals;
+        for (const auto &rule : rules[code]) {
+            if (rule.front() >= PROGRAM) {
+                if (first[rule.front()].empty()) {
+                    if (rule.front() != code) {
+                        initializeFirstForNonTerminal(rule.front(), terminals);
+                    }
+                } else {
+                    for (const auto &terminal : first[rule.front()]) {
+                        terminals.insert(terminal);
+                    }
+                }
+
+            } else {
+                terminals.insert(rule.front());
+            }
+        }
+        first[code] = terminals;
+    }
+    for (const auto &terminal : first[code]) {
+        parentTerminals.insert(terminal);
+    }
+}
+
+void Parser::initializeNextFunctionMapper() {
+    // TODO: Initialize sets for NEXT function
 }
