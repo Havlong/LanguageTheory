@@ -64,9 +64,6 @@ void Parser::initializeGrammar() {
     for (int i = 0; i < 26; ++i) {
         rules[LETTER].push_back({'a' + i});
     }
-    for (int i = 0; i < 26; ++i) {
-        rules[LETTER].push_back({'A' + i});
-    }
 }
 
 void Parser::initializeFirstFunctionSets() {
