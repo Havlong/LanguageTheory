@@ -11,7 +11,7 @@
 Parser::Parser() {
     initializeGrammar();
     initializeFirstFunctionSets();
-    initializeNextFunctionMapper();
+    initializeNextFunctionSets();
 }
 
 std::vector<int> Parser::parseLine(const std::string &line) {
@@ -27,24 +27,29 @@ std::vector<int> Parser::parseProgram(const std::string &program) {
 
 void Parser::initializeGrammar() {
     rules[PROGRAM].push_back({VAR_DECLARATION, OPERATOR_DECLARATION});
-    rules[OPERATOR_DECLARATION].push_back({'B', 'E', 'G', 'I', 'N', OPERATOR_LIST, 'E', 'N', 'D'});
+    rules[OPERATOR_DECLARATION].push_back({'<', '<', OPERATOR_LIST, '>', '>'});
     rules[VAR_DECLARATION].push_back({'V', 'A', 'R', VAR_LIST, ':', 'I', 'N', 'T', 'E', 'G', 'E', 'R', ';'});
-    rules[VAR_LIST].push_back({VAR});
-    rules[VAR_LIST].push_back({VAR, ',', VAR_LIST});
-    rules[OPERATOR_LIST].push_back({OPERATOR});
+    rules[VAR_LIST].push_back({VAR, VAR_LIST_CONTINUATION});
+    rules[VAR_LIST_CONTINUATION].push_back({',', VAR, VAR_LIST_CONTINUATION});
+    rules[VAR_LIST_CONTINUATION].push_back({});
     rules[OPERATOR_LIST].push_back({OPERATOR, OPERATOR_LIST});
+    rules[OPERATOR_LIST].push_back({});
     rules[OPERATOR].push_back({VAR, '=', EXPRESSION, ';'});
-    rules[OPERATOR].push_back({'R', 'E', 'A', 'D', '(', OPERATOR_LIST, ')', ';'});
-    rules[OPERATOR].push_back({'W', 'R', 'I', 'T', 'E', '(', OPERATOR_LIST, ')', ';'});
+    rules[OPERATOR].push_back({'R', 'E', 'A', 'D', '[', VAR_LIST, ']', ';'});
+    rules[OPERATOR].push_back({'W', 'R', 'I', 'T', 'E', '[', VAR_LIST, ']', ';'});
     rules[OPERATOR].push_back(
-            {'F', 'O', 'R', VAR, '=', EXPRESSION, 'T', 'O', EXPRESSION, 'D', 'O',
+            {'F', 'O', 'R', VAR, ':', EXPRESSION, '.', '.', EXPRESSION, '<', '<',
              OPERATOR_LIST,
-             'E', 'N', 'D', '_', 'F', 'O', 'R', ';'});
-    rules[EXPRESSION].push_back({UNARY_OPERATOR, SUBEXPRESSION});
-    rules[EXPRESSION].push_back({SUBEXPRESSION});
-    rules[SUBEXPRESSION].push_back({'(', EXPRESSION, ')'});
+             '>', '>'});
+    rules[EXPRESSION].push_back({UNARY_OPERATOR, EXPRESSION_LIST});
+    rules[EXPRESSION].push_back({EXPRESSION_LIST});
+    rules[EXPRESSION_LIST].push_back({SUBEXPRESSION, EXPRESSION_LIST_CONTINUATION});
+    rules[EXPRESSION_LIST_CONTINUATION].push_back({BINARY_OPERATOR, SUBEXPRESSION, EXPRESSION_LIST_CONTINUATION});
+    rules[EXPRESSION_LIST_CONTINUATION].push_back({});
+    rules[SUBEXPRESSION].push_back({BRACKET_EXPRESSION});
     rules[SUBEXPRESSION].push_back({OPERAND});
-    rules[SUBEXPRESSION].push_back({SUBEXPRESSION, BINARY_OPERATOR, SUBEXPRESSION});
+    rules[BRACKET_EXPRESSION].push_back({'(', EXPRESSION, ')'});
+
     rules[UNARY_OPERATOR].push_back({'-'});
     rules[BINARY_OPERATOR].push_back({'+'});
     rules[BINARY_OPERATOR].push_back({'-'});
@@ -53,11 +58,11 @@ void Parser::initializeGrammar() {
     rules[OPERAND].push_back({CONST});
     for (int i = 11; i > 0; --i) {
         rules[VAR + i].push_back({LETTER, VAR + i - 1});
-        rules[VAR + i].push_back({LETTER});
+        rules[VAR + i].push_back({});
     }
     rules[VAR].push_back({LETTER});
-    rules[CONST].push_back({DIGIT});
     rules[CONST].push_back({DIGIT, CONST});
+    rules[CONST].push_back({});
     for (int i = 0; i < 10; ++i) {
         rules[DIGIT].push_back({'0' + i});
     }
@@ -68,29 +73,85 @@ void Parser::initializeGrammar() {
 
 void Parser::initializeFirstFunctionSets() {
     for (const auto&[nonTerminal, rule]: rules) {
-        if (first[nonTerminal].empty()) {
-            initializeFirstForNonTerminal(nonTerminal);
-        }
+        initializeFirstForNonTerminal(nonTerminal);
     }
 }
 
 void Parser::initializeFirstForNonTerminal(int nonTerminal) {
     if (first[nonTerminal].empty()) {
         for (const auto &rule : rules[nonTerminal]) {
-            if (rule.front() >= PROGRAM) {
-                if (rule.front() != nonTerminal) {
-                    initializeFirstForNonTerminal(rule.front());
+            if (!rule.empty()) {
+                if (rule.front() >= PROGRAM) {
+                    if (rule.front() != nonTerminal) {
+                        initializeFirstForNonTerminal(rule.front());
+                    }
+                    for (const auto &terminal : first[rule.front()]) {
+                        if (first[nonTerminal].count(terminal)) {
+                            std::cerr << "Hello, this is bugged to let you know";
+                            exit(-4);
+                        }
+
+                        first[nonTerminal].insert(terminal);
+                    }
+                } else {
+                    if (first[nonTerminal].count(rule.front())) {
+                        std::cerr << "Hello, this is bugged to let you know";
+                        exit(-4);
+                    }
+
+                    first[nonTerminal].insert(rule.front());
                 }
-                for (const auto &terminal : first[rule.front()]) {
-                    first[nonTerminal].insert(terminal);
-                }
-            } else {
-                first[nonTerminal].insert(rule.front());
             }
         }
     }
 }
 
-void Parser::initializeNextFunctionMapper() {
-    // TODO: Initialize sets for NEXT function
+void Parser::initializeNextFunctionSets() {
+    for (const auto&[nonTerminal, rule]: rules) {
+        initializeNextForNonTerminal(nonTerminal);
+    }
 }
+
+void Parser::initializeNextForNonTerminal(int nonTerminal) {
+    if (next[nonTerminal].empty()) {
+        for (const auto&[ruleNonTerminal, subRules]: rules) {
+            for (const auto &rule : subRules) {
+                if (!rule.empty()) {
+                    for (int i = 0; i < (int) rule.size() - 1; ++i) {
+                        if (rule[i] == nonTerminal) {
+                            if (rule[i + 1] >= PROGRAM) {
+                                for (const auto &terminal : first[rule[i + 1]]) {
+                                    next[nonTerminal].insert(terminal);
+                                }
+                            } else {
+                                next[nonTerminal].insert(rule[i + 1]);
+                            }
+                        }
+                    }
+
+                    if (rule.back() == nonTerminal && ruleNonTerminal != nonTerminal) {
+                        initializeNextForNonTerminal(ruleNonTerminal);
+
+                        for (const auto &terminal: next[ruleNonTerminal]) {
+                            next[nonTerminal].insert(terminal);
+                        }
+                    }
+                }
+            }
+        }
+
+        for (const auto &rule : rules[nonTerminal]) {
+            if (rule.empty()) {
+                for (const auto &terminal: first[nonTerminal]) {
+                    if (next[nonTerminal].count(terminal)) {
+                        std::cerr << "Hello, this is bugged to let you know";
+                        exit(-3);
+                    }
+                }
+            }
+        }
+
+    }
+}
+
+
