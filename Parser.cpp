@@ -87,16 +87,16 @@ void Parser::initializeFirstForNonTerminal(int nonTerminal) {
                     }
                     for (const auto &terminal : first[rule.front()]) {
                         if (first[nonTerminal].count(terminal)) {
-                            std::cerr << "Hello, this is bugged to let you know";
-                            exit(-4);
+                            std::cerr << "Grammar has intersection of FIRST sets for different rules" << std::endl;
+                            exit(-nonTerminal);
                         }
 
                         first[nonTerminal].insert(terminal);
                     }
                 } else {
                     if (first[nonTerminal].count(rule.front())) {
-                        std::cerr << "Hello, this is bugged to let you know";
-                        exit(-4);
+                        std::cerr << "Grammar has intersection of FIRST sets for different rules" << std::endl;
+                        exit(-nonTerminal);
                     }
 
                     first[nonTerminal].insert(rule.front());
@@ -144,8 +144,8 @@ void Parser::initializeNextForNonTerminal(int nonTerminal) {
             if (rule.empty()) {
                 for (const auto &terminal: first[nonTerminal]) {
                     if (next[nonTerminal].count(terminal)) {
-                        std::cerr << "Hello, this is bugged to let you know";
-                        exit(-3);
+                        std::cerr << "Grammar has intersection of FIRST and FOLLOW sets for empty rule" << std::endl;
+                        exit(-nonTerminal);
                     }
                 }
             }
