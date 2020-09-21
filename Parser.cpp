@@ -12,6 +12,8 @@ Parser::Parser() {
     initializeGrammar();
     initializeFirstFunctionSets();
     initializeNextFunctionSets();
+    constructParsingTable();
+    syntaxStack.push(PROGRAM);
 }
 
 std::vector<int> Parser::parseLine(const std::string &line) {
@@ -29,18 +31,19 @@ void Parser::initializeGrammar() {
     rules[PROGRAM].push_back({VAR_DECLARATION, OPERATOR_DECLARATION});
     rules[OPERATOR_DECLARATION].push_back({'<', '<', OPERATOR_LIST, '>', '>'});
     rules[VAR_DECLARATION].push_back({'V', 'A', 'R', VAR_LIST, ':', 'I', 'N', 'T', 'E', 'G', 'E', 'R', ';'});
+
     rules[VAR_LIST].push_back({VAR, VAR_LIST_CONTINUATION});
     rules[VAR_LIST_CONTINUATION].push_back({',', VAR, VAR_LIST_CONTINUATION});
     rules[VAR_LIST_CONTINUATION].push_back({});
+
     rules[OPERATOR_LIST].push_back({OPERATOR, OPERATOR_LIST});
     rules[OPERATOR_LIST].push_back({});
     rules[OPERATOR].push_back({VAR, '=', EXPRESSION, ';'});
     rules[OPERATOR].push_back({'R', 'E', 'A', 'D', '[', VAR_LIST, ']', ';'});
     rules[OPERATOR].push_back({'W', 'R', 'I', 'T', 'E', '[', VAR_LIST, ']', ';'});
     rules[OPERATOR].push_back(
-            {'F', 'O', 'R', VAR, ':', EXPRESSION, '.', '.', EXPRESSION, '<', '<',
-             OPERATOR_LIST,
-             '>', '>'});
+            {'F', 'O', 'R', VAR, ':', EXPRESSION, '.', '.', EXPRESSION, OPERATOR_DECLARATION});
+
     rules[EXPRESSION].push_back({UNARY_OPERATOR, EXPRESSION_LIST});
     rules[EXPRESSION].push_back({EXPRESSION_LIST});
     rules[EXPRESSION_LIST].push_back({SUBEXPRESSION, EXPRESSION_LIST_CONTINUATION});
@@ -54,15 +57,16 @@ void Parser::initializeGrammar() {
     rules[BINARY_OPERATOR].push_back({'+'});
     rules[BINARY_OPERATOR].push_back({'-'});
     rules[BINARY_OPERATOR].push_back({'*'});
+
     rules[OPERAND].push_back({VAR});
     rules[OPERAND].push_back({CONST});
-    for (int i = 11; i > 0; --i) {
-        rules[VAR + i].push_back({LETTER, VAR + i - 1});
-        rules[VAR + i].push_back({});
-    }
-    rules[VAR].push_back({LETTER});
+
+    rules[VAR].push_back({LETTER, VAR});
+    rules[VAR].push_back({});
+
     rules[CONST].push_back({DIGIT, CONST});
     rules[CONST].push_back({});
+
     for (int i = 0; i < 10; ++i) {
         rules[DIGIT].push_back({'0' + i});
     }
@@ -151,6 +155,22 @@ void Parser::initializeNextForNonTerminal(int nonTerminal) {
             }
         }
 
+    }
+}
+
+void Parser::constructParsingTable() {
+    for (const auto &[nonTerminal, subRules]: rules) {
+        for (int i = 0; i < (int) subRules.size(); ++i) {
+            if (subRules[i].empty()) {
+                for (const auto &terminal: next[nonTerminal]) {
+                    parsingTable[nonTerminal][terminal] = i;
+                }
+            } else {
+                for (const auto &terminal: first[nonTerminal]) {
+                    parsingTable[nonTerminal][terminal] = i;
+                }
+            }
+        }
     }
 }
 

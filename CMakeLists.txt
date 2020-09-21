@@ -3,4 +3,4 @@ project(LanguageTheory)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(LanguageTheory main.cpp Parser.cpp Parser.h Interpreter.cpp Interpreter.h)
+add_executable(LanguageTheory main.cpp Parser.cpp Parser.h Interpreter.cpp Interpreter.h SyntaxTreeNode.h SyntaxTreeLeaf.h SyntaxTreeBranch.h)

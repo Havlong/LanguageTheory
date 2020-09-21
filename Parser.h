@@ -10,11 +10,12 @@
 #define LANGUAGETHEORY_PARSER_H
 
 
-#include <stack>
 #include <iostream>
 #include <map>
-#include <vector>
 #include <set>
+#include <stack>
+#include <string>
+#include <vector>
 
 class Parser {
 private:
@@ -38,11 +39,12 @@ private:
     inline static const int CONST = 327567;
     inline static const int VAR = 327568;
 
-    std::stack<int> stack;
+    std::stack<int> syntaxStack;
 
     std::map<int, std::vector<std::vector<int>>> rules;
     std::map<int, std::set<char>> first;
     std::map<int, std::set<char>> next;
+    std::map<int, std::map<char, int>> parsingTable;
 
     void initializeGrammar();
 
@@ -53,6 +55,8 @@ private:
     void initializeNextFunctionSets();
 
     void initializeNextForNonTerminal(int nonTerminal);
+
+    void constructParsingTable();
 
 public:
 
