@@ -1,3 +1,6 @@
+#ifndef LANGUAGETHEORY_SYNTAXTREENODE_H
+#define LANGUAGETHEORY_SYNTAXTREENODE_H
+
 /**
  * 21.09.2020
  * SyntaxTreeNode
@@ -5,20 +8,21 @@
  * @author Havlong
  * @version v1.0
  */
-
-#ifndef LANGUAGETHEORY_SYNTAXTREENODE_H
-#define LANGUAGETHEORY_SYNTAXTREENODE_H
-
 class SyntaxTreeNode {
 private:
     SyntaxTreeNode *parent;
+    int nonTerminal;
 public:
-    SyntaxTreeNode() { this->parent = nullptr; }
+    explicit SyntaxTreeNode(int nonTerminal) : nonTerminal(nonTerminal) { this->parent = nullptr; }
 
-    explicit SyntaxTreeNode(SyntaxTreeNode *parent) : parent(parent) {}
+    SyntaxTreeNode(SyntaxTreeNode *parent, int nonTerminal) : parent(parent), nonTerminal(nonTerminal) {}
 
     [[nodiscard]] SyntaxTreeNode *getParent() const {
         return parent;
+    }
+
+    [[nodiscard]] int getNonTerminal() const {
+        return nonTerminal;
     }
 };
 

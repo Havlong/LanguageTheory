@@ -1,11 +1,3 @@
-/**
- * 14.09.2020
- * Parser
- *
- * @author Havlong
- * @version v1.0
- */
-
 #ifndef LANGUAGETHEORY_PARSER_H
 #define LANGUAGETHEORY_PARSER_H
 
@@ -16,10 +8,21 @@
 #include <stack>
 #include <string>
 #include <vector>
+#include "SyntaxTreeBranch.h"
+#include "SyntaxTreeLeaf.h"
 
+/**
+ * 14.09.2020
+ * Parser
+ *
+ * @author Havlong
+ * @version v1.0
+ */
 class Parser {
 private:
-    inline static const int PROGRAM = 327550;
+    inline static const int END_OF_NODE = 327548;
+    inline static const int PROGRAM = 327549;
+    inline static const int TYPE = 327550;
     inline static const int LETTER = 327551;
     inline static const int DIGIT = 327552;
     inline static const int VAR_DECLARATION = 327553;
@@ -60,9 +63,9 @@ private:
 
 public:
 
-    std::vector<int> parseLine(const std::string &line);
+    SyntaxTreeBranch *parseLine(const std::string &line, SyntaxTreeBranch *branch);
 
-    std::vector<int> parseProgram(const std::string &program);
+    SyntaxTreeBranch parseProgram(const std::string &program);
 
 
     Parser();

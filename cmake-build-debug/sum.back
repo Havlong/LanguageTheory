@@ -1,0 +1,9 @@
+VAR a, b, i, n: INTEGER;
+<<
+    READ[n];
+    FOR i: 1..n <<
+        READ[a, b];
+        a = a + b;
+        WRITE[a];
+    >>
+>>

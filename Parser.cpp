@@ -16,25 +16,96 @@ Parser::Parser() {
     syntaxStack.push(PROGRAM);
 }
 
-std::vector<int> Parser::parseLine(const std::string &line) {
-    // TODO: Implement syntax parser
-    return std::vector<int>();
+template<typename Base, typename T>
+inline bool instance_of(const T *) {
+    return std::is_base_of<Base, T>::value;
 }
 
-std::vector<int> Parser::parseProgram(const std::string &program) {
+SyntaxTreeBranch *Parser::parseLine(const std::string &line, SyntaxTreeBranch *branch) {
+    SyntaxTreeNode *current = branch;
+    std::string data;
+    for (int i = 0; i < line.size();) {
+        if (i == 38) {
+            std::cout << "HELLO, BUG" << std::endl;
+        }
+        int symbol = syntaxStack.top();
+        syntaxStack.pop();
+        if (symbol >= PROGRAM) {
+            // TODO: TEST spaces skip
+            while (std::isspace(line[i])) ++i;
+
+            if (parsingTable.count(symbol)) {
+                if (parsingTable[symbol].count(line[i])) {
+                    if (symbol == LETTER || symbol == DIGIT) {
+                        data.push_back(line[i++]);
+                    } else {
+                        if (symbol >= CONST) {
+                            int ruleIndex = parsingTable[symbol][line[i]];
+                            if (rules[symbol][ruleIndex].empty()) {
+                                current = new SyntaxTreeLeaf(current, symbol, data);
+                                current = ((SyntaxTreeLeaf *) current)->pushLeaf();
+                                data.clear();
+                            }
+                        } else if (current->getNonTerminal() != symbol) {
+                            current = new SyntaxTreeBranch((SyntaxTreeBranch *) current, symbol);
+                            syntaxStack.push(END_OF_NODE);
+                        }
+                        const std::vector<int> &rule = rules[symbol][parsingTable[symbol][line[i]]];
+                        for (auto it = rule.rbegin(); it != rule.rend(); ++it) {
+                            syntaxStack.push(*it);
+                        }
+                    }
+                } else {
+                    // TODO: Process Syntax Error
+                    std::string remaining = line.substr(i);
+                    std::cerr << "Syntax Error\n";
+                    exit(-5);
+                }
+            } else {
+                std::cerr << "Error, expected nonTerminal, that does not exist in parsing table\n";
+                exit(-6);
+            }
+        } else if (symbol == END_OF_NODE) {
+            // TODO: TEST spaces skip
+            while (std::isspace(line[i])) ++i;
+
+            auto *parent = (SyntaxTreeBranch *) (current->getParent());
+            parent->appendChild(current);
+            current = parent;
+        } else {
+            if (line[i] == symbol) {
+                i++;
+            } else {
+                // TODO: Process Syntax Error
+                std::string remaining = line.substr(i);
+                std::cerr << "Syntax Error\n";
+                exit(-5);
+            }
+        }
+    }
+    return (SyntaxTreeBranch *) (current);
+}
+
+SyntaxTreeBranch Parser::parseProgram(const std::string &program) {
     // TODO: Implement line splitter and parseLine() usage
     // TODO: Treat space symbols as separators with non-terminals
-    return std::vector<int>();
+    SyntaxTreeBranch programTree(PROGRAM);
+
+    // FOR EACH LINE
+    parseLine(program, &programTree);
+
+    return programTree;
 }
 
 void Parser::initializeGrammar() {
     rules[PROGRAM].push_back({VAR_DECLARATION, OPERATOR_DECLARATION});
     rules[OPERATOR_DECLARATION].push_back({'<', '<', OPERATOR_LIST, '>', '>'});
-    rules[VAR_DECLARATION].push_back({'V', 'A', 'R', VAR_LIST, ':', 'I', 'N', 'T', 'E', 'G', 'E', 'R', ';'});
+    rules[VAR_DECLARATION].push_back({'V', 'A', 'R', VAR_LIST, ':', TYPE, ';'});
 
     rules[VAR_LIST].push_back({VAR, VAR_LIST_CONTINUATION});
     rules[VAR_LIST_CONTINUATION].push_back({',', VAR, VAR_LIST_CONTINUATION});
     rules[VAR_LIST_CONTINUATION].push_back({});
+    rules[TYPE].push_back({'I', 'N', 'T', 'E', 'G', 'E', 'R'});
 
     rules[OPERATOR_LIST].push_back({OPERATOR, OPERATOR_LIST});
     rules[OPERATOR_LIST].push_back({});
@@ -166,12 +237,13 @@ void Parser::constructParsingTable() {
                     parsingTable[nonTerminal][terminal] = i;
                 }
             } else {
-                for (const auto &terminal: first[nonTerminal]) {
-                    parsingTable[nonTerminal][terminal] = i;
-                }
+                if (subRules[i].front() >= PROGRAM)
+                    for (const auto &terminal: first[subRules[i].front()]) {
+                        parsingTable[nonTerminal][terminal] = i;
+                    }
+                else
+                    parsingTable[nonTerminal][subRules[i].front()] = i;
             }
         }
     }
 }
-
-
