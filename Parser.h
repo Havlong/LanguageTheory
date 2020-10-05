@@ -20,30 +20,9 @@
  */
 class Parser {
 private:
-    inline static const int END_OF_NODE = 327548;
-    inline static const int PROGRAM = 327549;
-    inline static const int TYPE = 327550;
-    inline static const int LETTER = 327551;
-    inline static const int DIGIT = 327552;
-    inline static const int VAR_DECLARATION = 327553;
-    inline static const int OPERATOR_DECLARATION = 327554;
-    inline static const int VAR_LIST = 327555;
-    inline static const int VAR_LIST_CONTINUATION = 327556;
-    inline static const int OPERATOR_LIST = 327557;
-    inline static const int OPERATOR = 327558;
-    inline static const int EXPRESSION = 327559;
-    inline static const int EXPRESSION_LIST = 327560;
-    inline static const int EXPRESSION_LIST_CONTINUATION = 327561;
-    inline static const int BRACKET_EXPRESSION = 327562;
-    inline static const int SUBEXPRESSION = 327563;
-    inline static const int UNARY_OPERATOR = 327564;
-    inline static const int BINARY_OPERATOR = 327565;
-    inline static const int OPERAND = 327566;
-    inline static const int CONST = 327567;
-    inline static const int VAR = 327568;
-
     std::stack<int> syntaxStack;
 
+    std::set<char> usedTerminals;
     std::map<int, std::vector<std::vector<int>>> rules;
     std::map<int, std::set<char>> first;
     std::map<int, std::set<char>> next;
@@ -57,7 +36,11 @@ private:
 
     void initializeNextFunctionSets();
 
-    void initializeNextForNonTerminal(int nonTerminal);
+    void initializeNextWithTerminal(char terminal);
+
+    void initializeNextEndedWithNonTerminal(int nonTerminal, char terminal);
+
+    void copySetsFromNextNonTerminals();
 
     void constructParsingTable();
 

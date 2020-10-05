@@ -7,7 +7,8 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         // TODO: implement entire program interpretation
         std::string filename = (std::string) argv[1];
-        std::cout << "File " << filename << " compilation" << std::endl;
+        std::cout << "[I]: Welcome to BACK interpreter\n";
+        std::cout << "[I]: File " << filename << " is being compiled\n";
         std::ifstream fin(filename);
         std::string program((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
         SyntaxTreeBranch programTree = myParser.parseProgram(program);

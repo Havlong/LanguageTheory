@@ -8,6 +8,8 @@
 
 #include "Parser.h"
 
+using namespace StaticProvider;
+
 Parser::Parser() {
     initializeGrammar();
     initializeFirstFunctionSets();
@@ -25,9 +27,9 @@ SyntaxTreeBranch *Parser::parseLine(const std::string &line, SyntaxTreeBranch *b
     SyntaxTreeNode *current = branch;
     std::string data;
     for (int i = 0; i < line.size();) {
-        if (i == 38) {
+        /*if (i == 38) {
             std::cout << "HELLO, BUG" << std::endl;
-        }
+        }*/
         int symbol = syntaxStack.top();
         syntaxStack.pop();
         if (symbol >= PROGRAM) {
@@ -39,7 +41,7 @@ SyntaxTreeBranch *Parser::parseLine(const std::string &line, SyntaxTreeBranch *b
                     if (symbol == LETTER || symbol == DIGIT) {
                         data.push_back(line[i++]);
                     } else {
-                        if (symbol >= CONST) {
+                        if (symbol == CONST_CONTINUATION || symbol == VAR_CONTINUATION) {
                             int ruleIndex = parsingTable[symbol][line[i]];
                             if (rules[symbol][ruleIndex].empty()) {
                                 current = new SyntaxTreeLeaf(current, symbol, data);
@@ -103,12 +105,14 @@ void Parser::initializeGrammar() {
     rules[VAR_DECLARATION].push_back({'V', 'A', 'R', VAR_LIST, ':', TYPE, ';'});
 
     rules[VAR_LIST].push_back({VAR, VAR_LIST_CONTINUATION});
-    rules[VAR_LIST_CONTINUATION].push_back({',', VAR, VAR_LIST_CONTINUATION});
+    rules[VAR_LIST_CONTINUATION].push_back({',', VAR_LIST});
     rules[VAR_LIST_CONTINUATION].push_back({});
     rules[TYPE].push_back({'I', 'N', 'T', 'E', 'G', 'E', 'R'});
 
-    rules[OPERATOR_LIST].push_back({OPERATOR, OPERATOR_LIST});
-    rules[OPERATOR_LIST].push_back({});
+    rules[OPERATOR_LIST].push_back({OPERATOR, OPERATOR_LIST_CONTINUATION});
+    rules[OPERATOR_LIST_CONTINUATION].push_back({OPERATOR, OPERATOR_LIST});
+    rules[OPERATOR_LIST_CONTINUATION].push_back({});
+
     rules[OPERATOR].push_back({VAR, '=', EXPRESSION, ';'});
     rules[OPERATOR].push_back({'R', 'E', 'A', 'D', '[', VAR_LIST, ']', ';'});
     rules[OPERATOR].push_back({'W', 'R', 'I', 'T', 'E', '[', VAR_LIST, ']', ';'});
@@ -117,9 +121,11 @@ void Parser::initializeGrammar() {
 
     rules[EXPRESSION].push_back({UNARY_OPERATOR, EXPRESSION_LIST});
     rules[EXPRESSION].push_back({EXPRESSION_LIST});
+
     rules[EXPRESSION_LIST].push_back({SUBEXPRESSION, EXPRESSION_LIST_CONTINUATION});
-    rules[EXPRESSION_LIST_CONTINUATION].push_back({BINARY_OPERATOR, SUBEXPRESSION, EXPRESSION_LIST_CONTINUATION});
+    rules[EXPRESSION_LIST_CONTINUATION].push_back({BINARY_OPERATOR, EXPRESSION_LIST});
     rules[EXPRESSION_LIST_CONTINUATION].push_back({});
+
     rules[SUBEXPRESSION].push_back({BRACKET_EXPRESSION});
     rules[SUBEXPRESSION].push_back({OPERAND});
     rules[BRACKET_EXPRESSION].push_back({'(', EXPRESSION, ')'});
@@ -132,11 +138,13 @@ void Parser::initializeGrammar() {
     rules[OPERAND].push_back({VAR});
     rules[OPERAND].push_back({CONST});
 
-    rules[VAR].push_back({LETTER, VAR});
-    rules[VAR].push_back({});
+    rules[VAR].push_back({LETTER, VAR_CONTINUATION});
+    rules[VAR_CONTINUATION].push_back({VAR});
+    rules[VAR_CONTINUATION].push_back({});
 
-    rules[CONST].push_back({DIGIT, CONST});
-    rules[CONST].push_back({});
+    rules[CONST].push_back({DIGIT, CONST_CONTINUATION});
+    rules[CONST_CONTINUATION].push_back({CONST});
+    rules[CONST_CONTINUATION].push_back({});
 
     for (int i = 0; i < 10; ++i) {
         rules[DIGIT].push_back({'0' + i});
@@ -182,50 +190,76 @@ void Parser::initializeFirstForNonTerminal(int nonTerminal) {
 }
 
 void Parser::initializeNextFunctionSets() {
-    for (const auto&[nonTerminal, rule]: rules) {
-        initializeNextForNonTerminal(nonTerminal);
+    for (const auto &[nonTerminal, ruleSet] : rules) {
+        for (const auto &rule: ruleSet) {
+            for (const auto &symbol: rule) {
+                if (symbol < PROGRAM)
+                    usedTerminals.insert(symbol);
+            }
+        }
+    }
+    for (char terminal: usedTerminals) {
+        initializeNextWithTerminal(terminal);
+    }
+    copySetsFromNextNonTerminals();
+}
+
+void Parser::initializeNextWithTerminal(char terminal) {
+    for (const auto &[nonTerminal, ruleSet] : rules) {
+        for (const auto &rule : ruleSet) {
+            for (int i = 1; i < rule.size(); ++i) {
+                if (rule[i] == terminal && rule[i - 1] >= PROGRAM) {
+                    int nonTerminal = rule[i - 1];
+                    if (!next[nonTerminal].count(terminal)) {
+                        next[nonTerminal].insert(terminal);
+                        initializeNextEndedWithNonTerminal(nonTerminal, terminal);
+                    }
+                }
+            }
+        }
     }
 }
 
-void Parser::initializeNextForNonTerminal(int nonTerminal) {
-    if (next[nonTerminal].empty()) {
-        for (const auto&[ruleNonTerminal, subRules]: rules) {
-            for (const auto &rule : subRules) {
-                if (!rule.empty()) {
-                    for (int i = 0; i < (int) rule.size() - 1; ++i) {
-                        if (rule[i] == nonTerminal) {
-                            if (rule[i + 1] >= PROGRAM) {
-                                for (const auto &terminal : first[rule[i + 1]]) {
-                                    next[nonTerminal].insert(terminal);
-                                }
-                            } else {
-                                next[nonTerminal].insert(rule[i + 1]);
-                            }
-                        }
-                    }
-
-                    if (rule.back() == nonTerminal && ruleNonTerminal != nonTerminal) {
-                        initializeNextForNonTerminal(ruleNonTerminal);
-
-                        for (const auto &terminal: next[ruleNonTerminal]) {
+// TODO: STOPPED ON THIS FUNCTION
+void Parser::initializeNextEndedWithNonTerminal(int nonTerminal, char terminal) {
+    bool hasEmptyRule = false;
+    for (const auto &rule : rules[nonTerminal]) {
+        hasEmptyRule |= rule.empty();
+        if (!rule.empty() && rule.back() >= PROGRAM) {
+            if (!next[rule.back()].count(terminal)) {
+                next[rule.back()].insert(terminal);
+                initializeNextEndedWithNonTerminal(rule.back(), terminal);
+            }
+        }
+    }
+    if (hasEmptyRule) {
+        for (const auto &[nonTerminal, ruleSet] : rules) {
+            for (const auto &rule : ruleSet) {
+                for (int i = 1; i < rule.size(); ++i) {
+                    if (rule[i] == nonTerminal && rule[i - 1] >= PROGRAM) {
+                        int nonTerminal = rule[i - 1];
+                        if (!next[nonTerminal].count(terminal)) {
                             next[nonTerminal].insert(terminal);
+                            initializeNextEndedWithNonTerminal(nonTerminal, terminal);
                         }
                     }
                 }
             }
         }
+    }
+}
 
-        for (const auto &rule : rules[nonTerminal]) {
-            if (rule.empty()) {
-                for (const auto &terminal: first[nonTerminal]) {
-                    if (next[nonTerminal].count(terminal)) {
-                        std::cerr << "Grammar has intersection of FIRST and FOLLOW sets for empty rule" << std::endl;
-                        exit(-nonTerminal);
+void Parser::copySetsFromNextNonTerminals() {
+    for (const auto &[nonTerminal, ruleSet] : rules) {
+        for (const auto &rule : ruleSet) {
+            for (int i = 1; i < rule.size(); ++i) {
+                if (rule[i] >= PROGRAM && rule[i - 1] >= PROGRAM) {
+                    for (const auto &terminal : first[rule[i]]) {
+                        next[rule[i - 1]].insert(terminal);
                     }
                 }
             }
         }
-
     }
 }
 
@@ -234,15 +268,28 @@ void Parser::constructParsingTable() {
         for (int i = 0; i < (int) subRules.size(); ++i) {
             if (subRules[i].empty()) {
                 for (const auto &terminal: next[nonTerminal]) {
+                    if (parsingTable[nonTerminal].count(terminal)) {
+                        std::cerr << "Grammar had intersection of FIRST and FOLLOW sets for non-terminal" << std::endl;
+                        exit(-nonTerminal);
+                    }
                     parsingTable[nonTerminal][terminal] = i;
                 }
             } else {
-                if (subRules[i].front() >= PROGRAM)
+                if (subRules[i].front() >= PROGRAM) {
                     for (const auto &terminal: first[subRules[i].front()]) {
+                        if (parsingTable[nonTerminal].count(terminal)) {
+                            std::cerr << "Grammar had intersection while constructing parsing table" << std::endl;
+                            exit(-nonTerminal);
+                        }
                         parsingTable[nonTerminal][terminal] = i;
                     }
-                else
+                } else {
+                    if (parsingTable[nonTerminal].count(subRules[i].front())) {
+                        std::cerr << "Grammar had intersection while constructing parsing table" << std::endl;
+                        exit(-nonTerminal);
+                    }
                     parsingTable[nonTerminal][subRules[i].front()] = i;
+                }
             }
         }
     }
