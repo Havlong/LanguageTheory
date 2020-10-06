@@ -27,6 +27,10 @@ public:
     [[nodiscard]] const std::vector<SyntaxTreeNode *> &getChildren() const {
         return children;
     }
+
+    bool isBranch() override {
+        return true;
+    }
 };
 
 

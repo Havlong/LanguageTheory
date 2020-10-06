@@ -29,6 +29,10 @@ public:
         parentBranch->appendChild(this);
         return parentBranch;
     }
+
+    bool isBranch() override {
+        return false;
+    }
 };
 
 

@@ -18,11 +18,6 @@ Parser::Parser() {
     syntaxStack.push(PROGRAM);
 }
 
-template<typename Base, typename T>
-inline bool instance_of(const T *) {
-    return std::is_base_of<Base, T>::value;
-}
-
 SyntaxTreeBranch *Parser::parseLine(const std::string &line, SyntaxTreeBranch *branch) {
     SyntaxTreeNode *current = branch;
     std::string data;
@@ -30,7 +25,6 @@ SyntaxTreeBranch *Parser::parseLine(const std::string &line, SyntaxTreeBranch *b
         int symbol = syntaxStack.top();
         syntaxStack.pop();
         if (symbol >= PROGRAM) {
-            // TODO: TEST spaces skip
             while (std::isspace(line[i])) ++i;
 
             if (parsingTable.count(symbol)) {
@@ -65,7 +59,6 @@ SyntaxTreeBranch *Parser::parseLine(const std::string &line, SyntaxTreeBranch *b
                 exit(-6);
             }
         } else if (symbol == END_OF_NODE) {
-            // TODO: TEST spaces skip
             while (std::isspace(line[i])) ++i;
 
             auto *parent = (SyntaxTreeBranch *) (current->getParent());
@@ -107,7 +100,7 @@ void Parser::initializeGrammar() {
     rules[TYPE].push_back({'I', 'N', 'T', 'E', 'G', 'E', 'R'});
 
     rules[OPERATOR_LIST].push_back({OPERATOR, OPERATOR_LIST_CONTINUATION});
-    rules[OPERATOR_LIST_CONTINUATION].push_back({OPERATOR, OPERATOR_LIST});
+    rules[OPERATOR_LIST_CONTINUATION].push_back({OPERATOR_LIST});
     rules[OPERATOR_LIST_CONTINUATION].push_back({});
 
     rules[OPERATOR].push_back({VAR, '=', EXPRESSION, ';'});
