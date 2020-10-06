@@ -27,9 +27,6 @@ SyntaxTreeBranch *Parser::parseLine(const std::string &line, SyntaxTreeBranch *b
     SyntaxTreeNode *current = branch;
     std::string data;
     for (int i = 0; i < line.size();) {
-        /*if (i == 38) {
-            std::cout << "HELLO, BUG" << std::endl;
-        }*/
         int symbol = syntaxStack.top();
         syntaxStack.pop();
         if (symbol >= PROGRAM) {
@@ -198,10 +195,13 @@ void Parser::initializeNextFunctionSets() {
             }
         }
     }
-    for (char terminal: usedTerminals) {
+    for (const char &terminal: usedTerminals) {
         initializeNextWithTerminal(terminal);
     }
     copySetsFromNextNonTerminals();
+    for (const auto &[nonTerminal, nonTerminalRules]: rules) {
+        pushNextFromNonTerminal(nonTerminal);
+    }
 }
 
 void Parser::initializeNextWithTerminal(char terminal) {
@@ -209,45 +209,13 @@ void Parser::initializeNextWithTerminal(char terminal) {
         for (const auto &rule : ruleSet) {
             for (int i = 1; i < rule.size(); ++i) {
                 if (rule[i] == terminal && rule[i - 1] >= PROGRAM) {
-                    int nonTerminal = rule[i - 1];
-                    if (!next[nonTerminal].count(terminal)) {
-                        next[nonTerminal].insert(terminal);
-                        initializeNextEndedWithNonTerminal(nonTerminal, terminal);
-                    }
+                    next[rule[i - 1]].insert(terminal);
                 }
             }
         }
     }
 }
 
-// TODO: STOPPED ON THIS FUNCTION
-void Parser::initializeNextEndedWithNonTerminal(int nonTerminal, char terminal) {
-    bool hasEmptyRule = false;
-    for (const auto &rule : rules[nonTerminal]) {
-        hasEmptyRule |= rule.empty();
-        if (!rule.empty() && rule.back() >= PROGRAM) {
-            if (!next[rule.back()].count(terminal)) {
-                next[rule.back()].insert(terminal);
-                initializeNextEndedWithNonTerminal(rule.back(), terminal);
-            }
-        }
-    }
-    if (hasEmptyRule) {
-        for (const auto &[nonTerminal, ruleSet] : rules) {
-            for (const auto &rule : ruleSet) {
-                for (int i = 1; i < rule.size(); ++i) {
-                    if (rule[i] == nonTerminal && rule[i - 1] >= PROGRAM) {
-                        int nonTerminal = rule[i - 1];
-                        if (!next[nonTerminal].count(terminal)) {
-                            next[nonTerminal].insert(terminal);
-                            initializeNextEndedWithNonTerminal(nonTerminal, terminal);
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 void Parser::copySetsFromNextNonTerminals() {
     for (const auto &[nonTerminal, ruleSet] : rules) {
@@ -256,6 +224,45 @@ void Parser::copySetsFromNextNonTerminals() {
                 if (rule[i] >= PROGRAM && rule[i - 1] >= PROGRAM) {
                     for (const auto &terminal : first[rule[i]]) {
                         next[rule[i - 1]].insert(terminal);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Parser::pushNextFromNonTerminal(int nonTerminal) {
+    bool hasEmptyRule = false;
+    for (const auto &rule : rules[nonTerminal]) {
+        hasEmptyRule |= rule.empty();
+        if (!rule.empty() && rule.back() >= PROGRAM) {
+            bool terminalAdded = false;
+            for (const auto &terminal: next[nonTerminal]) {
+                if (!next[rule.back()].count(terminal)) {
+                    terminalAdded = true;
+                    next[rule.back()].insert(terminal);
+                }
+            }
+            if (terminalAdded)
+                pushNextFromNonTerminal(rule.back());
+        }
+    }
+    if (hasEmptyRule) {
+        for (const auto &[ruleNonTerminal, ruleSet] : rules) {
+            for (const auto &rule : ruleSet) {
+                for (int i = 1; i < rule.size(); ++i) {
+                    if (rule[i] == nonTerminal && rule[i - 1] >= PROGRAM) {
+                        int newNonTerminal = rule[i - 1];
+
+                        bool terminalAdded = false;
+                        for (const auto &terminal: next[nonTerminal]) {
+                            if (!next[newNonTerminal].count(terminal)) {
+                                terminalAdded = true;
+                                next[newNonTerminal].insert(terminal);
+                            }
+                        }
+                        if (terminalAdded)
+                            pushNextFromNonTerminal(newNonTerminal);
                     }
                 }
             }

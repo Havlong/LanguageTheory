@@ -38,7 +38,7 @@ private:
 
     void initializeNextWithTerminal(char terminal);
 
-    void initializeNextEndedWithNonTerminal(int nonTerminal, char terminal);
+    void pushNextFromNonTerminal(int nonTerminal);
 
     void copySetsFromNextNonTerminals();
 
