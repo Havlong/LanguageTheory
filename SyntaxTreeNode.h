@@ -1,7 +1,8 @@
 #ifndef LANGUAGETHEORY_SYNTAXTREENODE_H
 #define LANGUAGETHEORY_SYNTAXTREENODE_H
 
-#include <ostream>
+#include <vector>
+#include <iostream>
 #include "Static.h"
 
 /**
@@ -14,6 +15,8 @@
 class SyntaxTreeNode {
 private:
     SyntaxTreeNode *parent;
+    std::vector<SyntaxTreeNode *> children;
+    std::string data;
     int nonTerminal;
 public:
     explicit SyntaxTreeNode(int nonTerminal) : nonTerminal(nonTerminal) { this->parent = nullptr; }
@@ -28,7 +31,31 @@ public:
         return nonTerminal;
     }
 
-    virtual bool isBranch() = 0;
+    [[nodiscard]] std::string &getData() {
+        return data;
+    }
+
+    [[nodiscard]] const std::vector<SyntaxTreeNode *> &getChildren() const {
+        return children;
+    }
+
+    [[nodiscard]] SyntaxTreeNode *pushLeaf() {
+        if (parent != nullptr) {
+            parent->appendChild(this);
+            return parent;
+        } else {
+            std::cerr << "[E]: There was no parent" << std::endl;
+            exit(-6);
+        }
+    }
+
+    void setData(const std::string &newData) {
+        SyntaxTreeNode::data = newData;
+    }
+
+    void appendChild(SyntaxTreeNode *child) {
+        SyntaxTreeNode::children.push_back(child);
+    }
 
     friend std::ostream &operator<<(std::ostream &os, const SyntaxTreeNode &node) {
         os << "nonTerminal: ";
@@ -130,6 +157,8 @@ public:
                 break;
             }
         }
+        os << "data: ";
+        os << node.data;
         return os;
     }
 };

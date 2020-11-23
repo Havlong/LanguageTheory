@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
         std::cout << "[I]: File " << filename << " is being compiled\n";
         std::ifstream fin(filename);
         std::string program((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
-        SyntaxTreeBranch programTree = myParser.parseProgram(program);
+        SyntaxTreeNode programTree = myParser.parseProgram(program);
         std::cout << "[I]: Tree is ready\n";
         std::cout << "[I]: Applying interpreter\n";
     } else {

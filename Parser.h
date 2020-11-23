@@ -8,8 +8,7 @@
 #include <stack>
 #include <string>
 #include <vector>
-#include "SyntaxTreeBranch.h"
-#include "SyntaxTreeLeaf.h"
+#include "SyntaxTreeNode.h"
 
 /**
  * 14.09.2020
@@ -24,6 +23,8 @@ private:
 
     std::set<char> usedTerminals;
     std::map<int, std::vector<std::vector<int>>> rules;
+    std::map<int, std::vector<std::string>> dataInfo;
+    std::map<char, std::string> errorInfo;
     std::map<int, std::set<char>> first;
     std::map<int, std::set<char>> next;
     std::map<int, std::map<char, int>> parsingTable;
@@ -46,9 +47,9 @@ private:
 
 public:
 
-    SyntaxTreeBranch *parseLine(const std::string &line, SyntaxTreeBranch *branch);
+    SyntaxTreeNode *parseLine(const std::string &line, SyntaxTreeNode *branch);
 
-    SyntaxTreeBranch parseProgram(const std::string &program);
+    SyntaxTreeNode parseProgram(const std::string &program);
 
 
     Parser();
