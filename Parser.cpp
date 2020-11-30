@@ -42,7 +42,10 @@ Parser::Parser() {
                             current->getData().push_back(lastChar);
                         } else if (current->getNonTerminal() != symbol
                                    && symbol < VAR_LIST_CONTINUATION
-                                   && symbol != EXPRESSION_LIST) {
+                                   && symbol != EXPRESSION_LIST
+                                   && symbol != OPERAND
+                                   && symbol != BRACKET_EXPRESSION
+                                   && symbol != SUBEXPRESSION) {
                             current = new SyntaxTreeNode(current, symbol);
                             syntaxStack.push(END_OF_NODE);
                             if (dataInfo.count(current->getNonTerminal())) {
@@ -99,7 +102,7 @@ Parser::Parser() {
     return current;
 }
 
-SyntaxTreeNode Parser::parseProgram(const std::string &program) {
+SyntaxTreeNode *Parser::parseProgram(const std::string &program) {
     auto *programTree = new SyntaxTreeNode(PROGRAM);
     std::stringstream splitter(program);
     while (!splitter.eof()) {
@@ -107,7 +110,7 @@ SyntaxTreeNode Parser::parseProgram(const std::string &program) {
         getline(splitter, line);
         programTree = parseLine(line, programTree);
     }
-    return *programTree;
+    return programTree;
 }
 
 void Parser::initializeGrammar() {

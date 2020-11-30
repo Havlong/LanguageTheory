@@ -34,6 +34,7 @@ namespace StaticProvider {
     inline static const int OPERATOR_LIST_CONTINUATION = 327566;
     inline static const int VAR_CONTINUATION = 327567;
     inline static const int CONST_CONTINUATION = 327568;
+    inline static const int VAR_MAX_SIZE = 12;
 }
 
 #endif //LANGUAGETHEORY_STATIC_H

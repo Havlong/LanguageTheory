@@ -49,7 +49,7 @@ public:
 
     SyntaxTreeNode *parseLine(const std::string &line, SyntaxTreeNode *branch);
 
-    SyntaxTreeNode parseProgram(const std::string &program);
+    SyntaxTreeNode *parseProgram(const std::string &program);
 
 
     Parser();
