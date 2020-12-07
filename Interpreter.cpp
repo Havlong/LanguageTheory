@@ -196,6 +196,9 @@ long long Interpreter::evaluateExpression(SyntaxTreeNode *expressionNode) {
 
 long long Interpreter::getValue(SyntaxTreeNode *expressionNode) {
     switch (expressionNode->getNonTerminal()) {
+        case StaticProvider::BRACKET_EXPRESSION: {
+            return getValue(expressionNode->getChildren()[0]);
+        }
         case StaticProvider::EXPRESSION: {
             return evaluateExpression(expressionNode);
         }

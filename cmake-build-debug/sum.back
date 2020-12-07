@@ -3,7 +3,7 @@ VAR a, b, i, n: INTEGER;
     READ[n];
     FOR i: 1..n <<
         READ[a, b];
-        a = a + b;
+        a = a * 2 + b - a - b;
         WRITE[a];
     >>
 >>

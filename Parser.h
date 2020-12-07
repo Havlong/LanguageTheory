@@ -51,6 +51,7 @@ public:
 
     SyntaxTreeNode *parseProgram(const std::string &program);
 
+    [[nodiscard]] bool isStackEmpty() const;
 
     Parser();
 

@@ -44,7 +44,6 @@ Parser::Parser() {
                                    && symbol < VAR_LIST_CONTINUATION
                                    && symbol != EXPRESSION_LIST
                                    && symbol != OPERAND
-                                   && symbol != BRACKET_EXPRESSION
                                    && symbol != SUBEXPRESSION) {
                             current = new SyntaxTreeNode(current, symbol);
                             syntaxStack.push(END_OF_NODE);
@@ -338,4 +337,8 @@ void Parser::constructParsingTable() {
             }
         }
     }
+}
+
+bool Parser::isStackEmpty() const {
+    return syntaxStack.empty();
 }

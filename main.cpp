@@ -16,11 +16,15 @@ int main(int argc, char **argv) {
 
         SyntaxTreeNode *programTree = myParser.parseProgram(program);
 
-        std::cout << "[I]: Tree is ready\n";
-        std::cout << "[I]: Applying interpreter\n";
+        if (myParser.isStackEmpty()) {
 
-        interpreter.executeSubTree(programTree);
+            std::cout << "[I]: Tree is ready\n";
+            std::cout << "[I]: Applying interpreter\n";
 
+            interpreter.executeSubTree(programTree);
+        } else {
+            std::cout << "[E]: File end met, but program is not finished\n";
+        }
     } else {
         std::cout << "[E]: There is no live interpreter with descending compilation\n";
         std::cout << "[E]: Please enter filename as the program argument\n";
